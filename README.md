@@ -160,7 +160,3 @@ main          ← Stable, production-ready code
 - [ ] T22: Play Store preparation
 
 ---
-
-## License
-
-This project is licensed under the MIT License.
