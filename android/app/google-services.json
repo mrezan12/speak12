@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "532976461683",
+    "project_id": "speak12-90815",
+    "storage_bucket": "speak12-90815.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:532976461683:android:a6b66d4e8c5e5336834706",
+        "android_client_info": {
+          "package_name": "com.example.speak12"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "532976461683-vfarl79vb5ue821bbafv1fa7v9jddv2b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.speak12",
+            "certificate_hash": "4b694e47f8f82d29b2e92b1669cb7dbbc4dab5ac"
+          }
+        },
+        {
+          "client_id": "532976461683-rfjaq5lvdckoaakst289di89migi359l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP0_5LbqUOEhybzxb5fKahwRUBhDS_-Kc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "532976461683-rfjaq5lvdckoaakst289di89migi359l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
