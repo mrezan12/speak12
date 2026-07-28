@@ -4,21 +4,21 @@ import 'app_colors.dart';
 import 'app_text_styles.dart';
 
 abstract final class AppTheme {
-  static ThemeData get dark {
+  static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.background,
 
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         surface: AppColors.surface,
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         error: AppColors.error,
         onPrimary: AppColors.background,
-        onSecondary: AppColors.background,
+        onSecondary: AppColors.textPrimary,
         onSurface: AppColors.textPrimary,
-        onError: AppColors.textPrimary,
+        onError: AppColors.background,
       ),
 
       textTheme: const TextTheme(
@@ -40,7 +40,8 @@ abstract final class AppTheme {
         titleTextStyle: AppTextStyles.headlineMedium,
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
         ),
       ),
 
@@ -62,13 +63,30 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(12)),
           ),
-          textStyle: AppTextStyles.labelLarge,
+          textStyle: AppTextStyles.labelLarge.copyWith(
+            color: AppColors.background,
+          ),
+        ),
+      ),
+
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.background,
+          elevation: 0,
+          padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          textStyle: AppTextStyles.labelLarge.copyWith(
+            color: AppColors.background,
+          ),
         ),
       ),
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.primaryDark,
           side: BorderSide(color: AppColors.primary),
           padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(
@@ -79,8 +97,8 @@ abstract final class AppTheme {
       ),
 
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
+        backgroundColor: AppColors.background,
+        selectedItemColor: AppColors.primaryDark,
         unselectedItemColor: AppColors.textHint,
         elevation: 0,
         type: BottomNavigationBarType.fixed,
@@ -108,6 +126,10 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(12)),
           borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
+      ),
+
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
       ),
     );
   }

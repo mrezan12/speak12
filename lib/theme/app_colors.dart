@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
 
+/// Light brand palette aligned with Duolingo-like tokens (T04b / issue #27).
+/// Keep UI mostly Snow + Polar + Eel; Feather Green is the signature.
 abstract final class AppColors {
-  static const Color background = Color(0xFF0F0F0F);
-  static const Color surface = Color(0xFF1C1C2E);
-  static const Color surfaceVariant = Color(0xFF252540);
+  /// Snow — main canvas
+  static const Color background = Color(0xFFFFFFFF);
 
-  static const Color primary = Color(0xFF4ECCA3);
-  static const Color primaryDark = Color(0xFF38A882);
-  static const Color secondary = Color(0xFFFFD166);
+  /// Polar — cards / soft panels
+  static const Color surface = Color(0xFFF7F7F7);
 
-  static const Color success = Color(0xFF06D6A0);
-  static const Color error = Color(0xFFEF476F);
-  static const Color warning = Color(0xFFFFB703);
+  /// Swan — subtle fills / stronger surface contrast
+  static const Color surfaceVariant = Color(0xFFE5E5E5);
 
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFA0A0B0);
-  static const Color textHint = Color(0xFF5A5A72);
+  /// Feather Green — brand CTA
+  static const Color primary = Color(0xFF58CC02);
 
-  static const Color divider = Color(0xFF2A2A3E);
-  static const Color cardBorder = Color(0xFF2E2E48);
+  /// Button green shadow / pressed
+  static const Color primaryDark = Color(0xFF58A700);
+
+  /// Bee — rare accent (XP / selected highlight)
+  static const Color secondary = Color(0xFFFFC800);
+
+  /// Same as Feather Green for positive states
+  static const Color success = Color(0xFF58CC02);
+
+  /// Cardinal — errors / wrong
+  static const Color error = Color(0xFFFF4B4B);
+
+  /// Fox — warnings / streak energy
+  static const Color warning = Color(0xFFFF9600);
+
+  /// Eel — primary text
+  static const Color textPrimary = Color(0xFF4B4B4B);
+
+  /// Wolf — secondary text
+  static const Color textSecondary = Color(0xFF777777);
+
+  /// Hare — hints / muted
+  static const Color textHint = Color(0xFFAFAFAF);
+
+  /// Swan — dividers / borders
+  static const Color divider = Color(0xFFE5E5E5);
+  static const Color cardBorder = Color(0xFFE5E5E5);
 }
