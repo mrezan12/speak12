@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'screens/home/home_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -18,11 +20,7 @@ class Speak12App extends StatelessWidget {
       title: 'Speak12',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: const Scaffold(
-        body: Center(
-          child: Text('Speak12'),
-        ),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
