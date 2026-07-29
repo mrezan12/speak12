@@ -7,6 +7,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../flashcard/flashcard_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -21,12 +22,12 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _recordTestProgress(WidgetRef ref) async {
-    final user = ref.read(authStateProvider).value;
-    if (user == null) return;
-    await ref
-        .read(userProgressRepositoryProvider)
-        .recordSentenceLearned(user.uid);
+  Future<void> _openFlashcard(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const FlashcardScreen(),
+      ),
+    );
     ref.invalidate(userProgressProvider);
   }
 
@@ -52,7 +53,7 @@ class HomeScreen extends ConsumerWidget {
               name: name,
               progress: progress,
               onComingSoon: (feature) => _comingSoon(context, feature),
-              onTestIncrement: () => _recordTestProgress(ref),
+              onOpenFlashcard: () => _openFlashcard(context, ref),
             );
           },
         ),
@@ -66,13 +67,13 @@ class _HomeBody extends StatelessWidget {
     required this.name,
     required this.progress,
     required this.onComingSoon,
-    required this.onTestIncrement,
+    required this.onOpenFlashcard,
   });
 
   final String name;
   final UserProgress progress;
   final void Function(String feature) onComingSoon;
-  final VoidCallback onTestIncrement;
+  final VoidCallback onOpenFlashcard;
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +126,7 @@ class _HomeBody extends StatelessWidget {
           icon: Icons.style_rounded,
           title: 'Flashcard',
           subtitle: 'Cümle kartlarıyla pratik',
-          onTap: () => onComingSoon('Flashcard'),
+          onTap: onOpenFlashcard,
         ),
         const SizedBox(height: 10),
         _QuickAction(
@@ -140,16 +141,6 @@ class _HomeBody extends StatelessWidget {
           title: 'Tekrar',
           subtitle: 'Öğrendiklerini pekiştir',
           onTap: () => onComingSoon('Tekrar'),
-        ),
-        const SizedBox(height: 20),
-        TextButton(
-          onPressed: onTestIncrement,
-          child: Text(
-            'Günlük +1 (geçici test)',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.primaryDark,
-            ),
-          ),
         ),
       ],
     );
