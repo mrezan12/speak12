@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
 import '../providers/progress_providers.dart';
-import '../screens/home/home_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/shell/main_shell.dart';
 import '../theme/app_colors.dart';
 
 /// Routes by auth + onboarding completion.
@@ -35,7 +35,7 @@ class AppRoot extends ConsumerWidget {
             if (progress == null || !progress.onboardingCompleted) {
               return const OnboardingScreen();
             }
-            return const HomeScreen();
+            return const MainShell();
           },
         );
       },

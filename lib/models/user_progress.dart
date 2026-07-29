@@ -9,6 +9,7 @@ class UserProgress {
     required this.longestStreak,
     required this.lastStudyDate,
     required this.totalLearned,
+    this.todayLearned = 0,
     this.onboardingCompleted = false,
   });
 
@@ -19,7 +20,15 @@ class UserProgress {
   final int longestStreak;
   final DateTime? lastStudyDate;
   final int totalLearned;
+  final int todayLearned;
   final bool onboardingCompleted;
+
+  bool get isDailyGoalMet => todayLearned >= dailyGoal && dailyGoal > 0;
+
+  double get dailyProgressFraction {
+    if (dailyGoal <= 0) return 0;
+    return (todayLearned / dailyGoal).clamp(0.0, 1.0);
+  }
 
   UserProgress copyWith({
     String? userId,
@@ -29,6 +38,7 @@ class UserProgress {
     int? longestStreak,
     DateTime? lastStudyDate,
     int? totalLearned,
+    int? todayLearned,
     bool? onboardingCompleted,
     bool clearLastStudyDate = false,
   }) {
@@ -41,6 +51,7 @@ class UserProgress {
       lastStudyDate:
           clearLastStudyDate ? null : (lastStudyDate ?? this.lastStudyDate),
       totalLearned: totalLearned ?? this.totalLearned,
+      todayLearned: todayLearned ?? this.todayLearned,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     );
   }
@@ -56,6 +67,7 @@ class UserProgress {
           ? null
           : Timestamp.fromDate(lastStudyDate!),
       'totalLearned': totalLearned,
+      'todayLearned': todayLearned,
       'onboardingCompleted': onboardingCompleted,
     };
   }
@@ -71,6 +83,7 @@ class UserProgress {
       longestStreak: (map['longestStreak'] as num?)?.toInt() ?? 0,
       lastStudyDate: lastStudyTimestamp?.toDate(),
       totalLearned: (map['totalLearned'] as num?)?.toInt() ?? 0,
+      todayLearned: (map['todayLearned'] as num?)?.toInt() ?? 0,
       onboardingCompleted: map['onboardingCompleted'] == true,
     );
   }

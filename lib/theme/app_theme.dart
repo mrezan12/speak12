@@ -104,6 +104,26 @@ abstract final class AppTheme {
         type: BottomNavigationBarType.fixed,
       ),
 
+      // Material 3 NavigationBar (MainShell) — indicator defaults to secondary (Bee).
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.18),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return AppTextStyles.bodySmall.copyWith(
+            color: selected ? AppColors.primaryDark : AppColors.textHint,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? AppColors.primaryDark : AppColors.textHint,
+          );
+        }),
+      ),
+
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 1,
