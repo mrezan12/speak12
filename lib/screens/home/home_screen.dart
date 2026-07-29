@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/user_progress.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/sentence_providers.dart';
@@ -117,12 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               final current =
                                   await repo.getUserProgress(user.uid);
                               await repo.saveUserProgress(
-                                UserProgress(
-                                  userId: current.userId,
-                                  currentLevel: current.currentLevel,
-                                  dailyGoal: current.dailyGoal,
-                                  currentStreak: current.currentStreak,
-                                  longestStreak: current.longestStreak,
+                                current.copyWith(
                                   lastStudyDate: DateTime.now(),
                                   totalLearned: current.totalLearned + 1,
                                 ),

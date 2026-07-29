@@ -9,6 +9,7 @@ class UserProgress {
     required this.longestStreak,
     required this.lastStudyDate,
     required this.totalLearned,
+    this.onboardingCompleted = false,
   });
 
   final String userId;
@@ -18,6 +19,31 @@ class UserProgress {
   final int longestStreak;
   final DateTime? lastStudyDate;
   final int totalLearned;
+  final bool onboardingCompleted;
+
+  UserProgress copyWith({
+    String? userId,
+    String? currentLevel,
+    int? dailyGoal,
+    int? currentStreak,
+    int? longestStreak,
+    DateTime? lastStudyDate,
+    int? totalLearned,
+    bool? onboardingCompleted,
+    bool clearLastStudyDate = false,
+  }) {
+    return UserProgress(
+      userId: userId ?? this.userId,
+      currentLevel: currentLevel ?? this.currentLevel,
+      dailyGoal: dailyGoal ?? this.dailyGoal,
+      currentStreak: currentStreak ?? this.currentStreak,
+      longestStreak: longestStreak ?? this.longestStreak,
+      lastStudyDate:
+          clearLastStudyDate ? null : (lastStudyDate ?? this.lastStudyDate),
+      totalLearned: totalLearned ?? this.totalLearned,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -30,6 +56,7 @@ class UserProgress {
           ? null
           : Timestamp.fromDate(lastStudyDate!),
       'totalLearned': totalLearned,
+      'onboardingCompleted': onboardingCompleted,
     };
   }
 
@@ -38,12 +65,13 @@ class UserProgress {
 
     return UserProgress(
       userId: map['userId'] as String,
-      currentLevel: map['currentLevel'] as String,
-      dailyGoal: map['dailyGoal'] as int,
-      currentStreak: map['currentStreak'] as int,
-      longestStreak: map['longestStreak'] as int,
+      currentLevel: map['currentLevel'] as String? ?? 'A1',
+      dailyGoal: (map['dailyGoal'] as num?)?.toInt() ?? 10,
+      currentStreak: (map['currentStreak'] as num?)?.toInt() ?? 0,
+      longestStreak: (map['longestStreak'] as num?)?.toInt() ?? 0,
       lastStudyDate: lastStudyTimestamp?.toDate(),
-      totalLearned: map['totalLearned'] as int,
+      totalLearned: (map['totalLearned'] as num?)?.toInt() ?? 0,
+      onboardingCompleted: map['onboardingCompleted'] == true,
     );
   }
 }

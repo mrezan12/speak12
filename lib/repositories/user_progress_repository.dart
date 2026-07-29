@@ -21,6 +21,7 @@ class UserProgressRepository {
       longestStreak: 0,
       lastStudyDate: null,
       totalLearned: 0,
+      onboardingCompleted: false,
     );
   }
 
@@ -43,6 +44,21 @@ class UserProgressRepository {
       progress.toMap(),
       SetOptions(merge: true),
     );
+  }
+
+  Future<UserProgress> completeOnboarding({
+    required String userId,
+    required String level,
+    required int dailyGoal,
+  }) async {
+    final current = await getUserProgress(userId);
+    final updated = current.copyWith(
+      currentLevel: level,
+      dailyGoal: dailyGoal,
+      onboardingCompleted: true,
+    );
+    await saveUserProgress(updated);
+    return updated;
   }
 
   Stream<UserProgress?> watchUserProgress(String userId) {
