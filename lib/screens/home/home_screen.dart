@@ -8,6 +8,7 @@ import '../../providers/progress_providers.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../flashcard/flashcard_screen.dart';
+import '../quiz/quiz_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -26,6 +27,15 @@ class HomeScreen extends ConsumerWidget {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const FlashcardScreen(),
+      ),
+    );
+    ref.invalidate(userProgressProvider);
+  }
+
+  Future<void> _openQuiz(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const QuizScreen(),
       ),
     );
     ref.invalidate(userProgressProvider);
@@ -54,6 +64,7 @@ class HomeScreen extends ConsumerWidget {
               progress: progress,
               onComingSoon: (feature) => _comingSoon(context, feature),
               onOpenFlashcard: () => _openFlashcard(context, ref),
+              onOpenQuiz: () => _openQuiz(context, ref),
             );
           },
         ),
@@ -68,12 +79,14 @@ class _HomeBody extends StatelessWidget {
     required this.progress,
     required this.onComingSoon,
     required this.onOpenFlashcard,
+    required this.onOpenQuiz,
   });
 
   final String name;
   final UserProgress progress;
   final void Function(String feature) onComingSoon;
   final VoidCallback onOpenFlashcard;
+  final VoidCallback onOpenQuiz;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +146,7 @@ class _HomeBody extends StatelessWidget {
           icon: Icons.quiz_rounded,
           title: 'Quiz',
           subtitle: 'Kısa bilgi kontrolü',
-          onTap: () => onComingSoon('Quiz'),
+          onTap: onOpenQuiz,
         ),
         const SizedBox(height: 10),
         _QuickAction(

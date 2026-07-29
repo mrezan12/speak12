@@ -68,6 +68,16 @@ class UserProgressRepository {
     return updated;
   }
 
+  Future<UserProgress> updateCurrentLevel({
+    required String userId,
+    required String level,
+  }) async {
+    final current = await getUserProgress(userId);
+    final updated = current.copyWith(currentLevel: level);
+    await saveUserProgress(updated);
+    return updated;
+  }
+
   /// Increments today's practice count and updates streak when appropriate.
   Future<UserProgress> recordSentenceLearned(String userId) async {
     final current = _normalizeForToday(await getUserProgress(userId));
