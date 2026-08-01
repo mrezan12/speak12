@@ -105,12 +105,21 @@ class UserProgressRepository {
     final longest =
         streak > current.longestStreak ? streak : current.longestStreak;
 
+    final dayKey = UserProgress.dayKey(today);
+    final activity = Map<String, int>.from(current.activityByDay);
+    activity[dayKey] = (activity[dayKey] ?? 0) + 1;
+
+    final byLevel = Map<String, int>.from(current.learnedByLevel);
+    byLevel[current.currentLevel] = (byLevel[current.currentLevel] ?? 0) + 1;
+
     final updated = current.copyWith(
       lastStudyDate: now,
       totalLearned: current.totalLearned + 1,
       todayLearned: current.todayLearned + 1,
       currentStreak: streak,
       longestStreak: longest,
+      activityByDay: activity,
+      learnedByLevel: byLevel,
     );
     await saveUserProgress(updated);
     return updated;

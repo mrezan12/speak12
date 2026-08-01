@@ -11,6 +11,8 @@ class UserProgress {
     required this.totalLearned,
     this.todayLearned = 0,
     this.onboardingCompleted = false,
+    this.activityByDay = const {},
+    this.learnedByLevel = const {},
   });
 
   final String userId;
@@ -23,11 +25,35 @@ class UserProgress {
   final int todayLearned;
   final bool onboardingCompleted;
 
+  /// `yyyy-MM-dd` → sentences learned that day.
+  final Map<String, int> activityByDay;
+
+  /// CEFR level → sentences learned while on that level.
+  final Map<String, int> learnedByLevel;
+
   bool get isDailyGoalMet => todayLearned >= dailyGoal && dailyGoal > 0;
 
   double get dailyProgressFraction {
     if (dailyGoal <= 0) return 0;
     return (todayLearned / dailyGoal).clamp(0.0, 1.0);
+  }
+
+  /// Activity counts for the last [days] ending today (oldest → newest).
+  List<({DateTime day, int count})> recentActivity({int days = 7}) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return List.generate(days, (i) {
+      final day = today.subtract(Duration(days: days - 1 - i));
+      final key = dayKey(day);
+      return (day: day, count: activityByDay[key] ?? 0);
+    });
+  }
+
+  static String dayKey(DateTime day) {
+    final y = day.year.toString().padLeft(4, '0');
+    final m = day.month.toString().padLeft(2, '0');
+    final d = day.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   UserProgress copyWith({
@@ -40,6 +66,8 @@ class UserProgress {
     int? totalLearned,
     int? todayLearned,
     bool? onboardingCompleted,
+    Map<String, int>? activityByDay,
+    Map<String, int>? learnedByLevel,
     bool clearLastStudyDate = false,
   }) {
     return UserProgress(
@@ -53,6 +81,8 @@ class UserProgress {
       totalLearned: totalLearned ?? this.totalLearned,
       todayLearned: todayLearned ?? this.todayLearned,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      activityByDay: activityByDay ?? this.activityByDay,
+      learnedByLevel: learnedByLevel ?? this.learnedByLevel,
     );
   }
 
@@ -69,6 +99,8 @@ class UserProgress {
       'totalLearned': totalLearned,
       'todayLearned': todayLearned,
       'onboardingCompleted': onboardingCompleted,
+      'activityByDay': activityByDay,
+      'learnedByLevel': learnedByLevel,
     };
   }
 
@@ -85,6 +117,16 @@ class UserProgress {
       totalLearned: (map['totalLearned'] as num?)?.toInt() ?? 0,
       todayLearned: (map['todayLearned'] as num?)?.toInt() ?? 0,
       onboardingCompleted: map['onboardingCompleted'] == true,
+      activityByDay: _stringIntMap(map['activityByDay']),
+      learnedByLevel: _stringIntMap(map['learnedByLevel']),
     );
+  }
+
+  static Map<String, int> _stringIntMap(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final entry in raw.entries)
+        entry.key.toString(): (entry.value as num?)?.toInt() ?? 0,
+    };
   }
 }
