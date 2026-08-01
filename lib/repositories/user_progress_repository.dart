@@ -78,6 +78,39 @@ class UserProgressRepository {
     return updated;
   }
 
+  Future<UserProgress> updateDailyGoal({
+    required String userId,
+    required int dailyGoal,
+  }) async {
+    final current = await getUserProgress(userId);
+    final updated = current.copyWith(dailyGoal: dailyGoal);
+    await saveUserProgress(updated);
+    return updated;
+  }
+
+  /// Clears learning counters; keeps level, daily goal, and onboarding.
+  Future<UserProgress> resetProgress(String userId) async {
+    final current = await getUserProgress(userId);
+    final reset = current.copyWith(
+      currentStreak: 0,
+      longestStreak: 0,
+      totalLearned: 0,
+      todayLearned: 0,
+      clearLastStudyDate: true,
+      activityByDay: const {},
+      learnedByLevel: const {},
+    );
+
+    await _userDoc(userId).set(
+      {
+        ...reset.toMap(),
+        'lastStudyDate': FieldValue.delete(),
+      },
+      SetOptions(merge: true),
+    );
+    return reset;
+  }
+
   /// Increments today's practice count and updates streak when appropriate.
   Future<UserProgress> recordSentenceLearned(String userId) async {
     final current = _normalizeForToday(await getUserProgress(userId));

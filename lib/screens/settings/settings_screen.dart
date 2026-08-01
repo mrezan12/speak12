@@ -10,6 +10,8 @@ import '../../theme/app_text_styles.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  static const _goals = <int>[5, 10, 20, 30];
+
   static const _levelSubtitles = <String, String>{
     'A1': 'Hiç bilmeyen / yeni başlayan',
     'A2': 'Temel günlük ifadeler',
@@ -103,6 +105,119 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _pickDailyGoal(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(authStateProvider).value;
+    final progress = ref.read(userProgressProvider).value;
+    if (user == null || progress == null) return;
+
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.background,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Günlük hedef', style: AppTextStyles.headlineMedium),
+                const SizedBox(height: 8),
+                for (final goal in _goals)
+                  ListTile(
+                    title: Text(
+                      '$goal cümle',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: goal == progress.dailyGoal
+                            ? AppColors.primaryDark
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      goal <= 10
+                          ? 'Hafif tempo'
+                          : goal <= 20
+                              ? 'Dengeli tempo'
+                              : 'Yoğun tempo',
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                    trailing: goal == progress.dailyGoal
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.primary,
+                          )
+                        : null,
+                    onTap: () => Navigator.of(context).pop(goal),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected == null || selected == progress.dailyGoal) return;
+
+    await ref.read(userProgressRepositoryProvider).updateDailyGoal(
+          userId: user.uid,
+          dailyGoal: selected,
+        );
+    ref.invalidate(userProgressProvider);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Günlük hedef $selected cümle olarak güncellendi'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(authStateProvider).value;
+    if (user == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('İlerlemeyi sıfırla?'),
+          content: const Text(
+            'Streak, toplam öğrenilen ve aktivite geçmişi silinir. '
+            'Seviye ve günlük hedef aynı kalır. Bu işlem geri alınamaz.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('Sıfırla'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    await ref.read(userProgressRepositoryProvider).resetProgress(user.uid);
+    ref.invalidate(userProgressProvider);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('İlerleme sıfırlandı'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
@@ -156,10 +271,24 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Günlük hedef'),
-            trailing: Text(
-              progress == null ? '—' : '${progress.dailyGoal} cümle',
-              style: AppTextStyles.labelLarge,
+            subtitle: const Text('Her gün kaç cümle pratik yapmak istersin'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  progress == null ? '—' : '${progress.dailyGoal} cümle',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textHint,
+                ),
+              ],
             ),
+            onTap: () => _pickDailyGoal(context, ref),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -168,6 +297,19 @@ class SettingsScreen extends ConsumerWidget {
               progress == null ? '—' : '${progress.todayLearned}',
               style: AppTextStyles.labelLarge,
             ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 32),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'İlerlemeyi sıfırla',
+              style: AppTextStyles.labelLarge.copyWith(color: AppColors.error),
+            ),
+            subtitle: const Text(
+              'Streak ve istatistikleri temizler',
+            ),
+            onTap: () => _confirmReset(context, ref),
           ),
           const SizedBox(height: 24),
           OutlinedButton(
@@ -178,7 +320,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Tam ayarlar ekranı T16’da genişletilecek.',
+            'Bildirim saati T19’da eklenecek.',
             style: AppTextStyles.bodySmall,
             textAlign: TextAlign.center,
           ),
