@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/sentence.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/audio_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/review_providers.dart';
 import '../../providers/sentence_providers.dart';
 import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/speak_button.dart';
 
 class QuizScreen extends ConsumerStatefulWidget {
   const QuizScreen({super.key});
@@ -45,6 +47,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   void initState() {
     super.initState();
     Future.microtask(_bootstrap);
+  }
+
+  @override
+  void deactivate() {
+    ref.read(audioServiceProvider).stop();
+    super.deactivate();
   }
 
   @override
@@ -191,6 +199,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          if (!_loading &&
+              _error == null &&
+              !_finished &&
+              _current != null)
+            SpeakButton(text: _current!.sentence.englishText),
+        ],
       ),
       body: SafeArea(
         child: _loading

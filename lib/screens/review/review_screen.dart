@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/sentence.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/audio_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/review_providers.dart';
 import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/speak_button.dart';
 
 /// Due-queue review session (T17 SRS).
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -40,6 +42,12 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   void initState() {
     super.initState();
     Future.microtask(_bootstrap);
+  }
+
+  @override
+  void deactivate() {
+    ref.read(audioServiceProvider).stop();
+    super.deactivate();
   }
 
   Future<void> _bootstrap() async {
@@ -163,6 +171,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          if (!_loading &&
+              _error == null &&
+              !_empty &&
+              !_finished &&
+              _current != null)
+            SpeakButton(text: _current!.englishText),
+        ],
       ),
       body: SafeArea(
         child: _loading

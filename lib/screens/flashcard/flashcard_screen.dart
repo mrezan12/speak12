@@ -9,9 +9,11 @@ import '../../providers/auth_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/review_providers.dart';
 import '../../providers/sentence_providers.dart';
+import '../../providers/audio_providers.dart';
 import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/speak_button.dart';
 
 /// In-session flashcard practice. Bilmedim re-queues; SRS schedules reviews.
 class FlashcardScreen extends ConsumerStatefulWidget {
@@ -41,6 +43,12 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   void initState() {
     super.initState();
     Future.microtask(_bootstrap);
+  }
+
+  @override
+  void deactivate() {
+    ref.read(audioServiceProvider).stop();
+    super.deactivate();
   }
 
   Future<void> _bootstrap() async {
@@ -170,6 +178,13 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          if (!_loading &&
+              _error == null &&
+              !_finished &&
+              _current != null)
+            SpeakButton(text: _current!.englishText),
+        ],
       ),
       body: SafeArea(
         child: _loading
