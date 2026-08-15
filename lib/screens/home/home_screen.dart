@@ -9,19 +9,10 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../flashcard/flashcard_screen.dart';
 import '../quiz/quiz_screen.dart';
+import '../review/review_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-
-  void _comingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature yakında gelecek'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   Future<void> _openFlashcard(BuildContext context, WidgetRef ref) async {
     await Navigator.of(context).push(
@@ -36,6 +27,15 @@ class HomeScreen extends ConsumerWidget {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const QuizScreen(),
+      ),
+    );
+    ref.invalidate(userProgressProvider);
+  }
+
+  Future<void> _openReview(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const ReviewScreen(),
       ),
     );
     ref.invalidate(userProgressProvider);
@@ -62,9 +62,9 @@ class HomeScreen extends ConsumerWidget {
             return _HomeBody(
               name: name,
               progress: progress,
-              onComingSoon: (feature) => _comingSoon(context, feature),
               onOpenFlashcard: () => _openFlashcard(context, ref),
               onOpenQuiz: () => _openQuiz(context, ref),
+              onOpenReview: () => _openReview(context, ref),
             );
           },
         ),
@@ -77,16 +77,16 @@ class _HomeBody extends StatelessWidget {
   const _HomeBody({
     required this.name,
     required this.progress,
-    required this.onComingSoon,
     required this.onOpenFlashcard,
     required this.onOpenQuiz,
+    required this.onOpenReview,
   });
 
   final String name;
   final UserProgress progress;
-  final void Function(String feature) onComingSoon;
   final VoidCallback onOpenFlashcard;
   final VoidCallback onOpenQuiz;
+  final VoidCallback onOpenReview;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +153,7 @@ class _HomeBody extends StatelessWidget {
           icon: Icons.replay_rounded,
           title: 'Tekrar',
           subtitle: 'Öğrendiklerini pekiştir',
-          onTap: () => onComingSoon('Tekrar'),
+          onTap: onOpenReview,
         ),
       ],
     );

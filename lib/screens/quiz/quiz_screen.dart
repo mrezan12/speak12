@@ -8,7 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/sentence.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/progress_providers.dart';
+import '../../providers/review_providers.dart';
 import '../../providers/sentence_providers.dart';
+import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
@@ -139,21 +141,27 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       }
     });
 
-    if (isCorrect) {
-      try {
+    try {
+      await applySentenceReview(
+        ref: ref,
+        userId: user.uid,
+        sentence: question.sentence,
+        quality: isCorrect ? SrsService.qualityGood : SrsService.qualityAgain,
+      );
+      if (isCorrect) {
         await ref
             .read(userProgressRepositoryProvider)
             .recordSentenceLearned(user.uid);
         ref.invalidate(userProgressProvider);
-      } catch (error) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Kayıt hatası: $error'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
       }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kayıt hatası: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
 
     _advanceTimer?.cancel();

@@ -8,21 +8,19 @@ import '../../models/sentence.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/review_providers.dart';
-import '../../providers/sentence_providers.dart';
 import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
-/// In-session flashcard practice. Bilmedim re-queues; SRS schedules reviews.
-class FlashcardScreen extends ConsumerStatefulWidget {
-  const FlashcardScreen({super.key});
+/// Due-queue review session (T17 SRS).
+class ReviewScreen extends ConsumerStatefulWidget {
+  const ReviewScreen({super.key});
 
   @override
-  ConsumerState<FlashcardScreen> createState() => _FlashcardScreenState();
+  ConsumerState<ReviewScreen> createState() => _ReviewScreenState();
 }
 
-class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
-  static const _maxSessionSize = 20;
+class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   static const _maxRequeuesPerCard = 3;
 
   final List<Sentence> _queue = [];
@@ -35,6 +33,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   bool _busy = false;
   bool _loading = true;
   bool _finished = false;
+  bool _empty = false;
   String? _error;
 
   @override
@@ -45,30 +44,25 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
   Future<void> _bootstrap() async {
     try {
-      final progress = await ref.read(userProgressProvider.future);
-      if (progress == null) {
+      final user = ref.read(authStateProvider).value;
+      if (user == null) {
         setState(() {
           _loading = false;
-          _error = 'İlerleme bulunamadı';
+          _error = 'Giriş gerekli';
         });
         return;
       }
 
-      final pool = List<Sentence>.from(
-        ref.read(sentencesByLevelProvider(progress.currentLevel)),
-      )..shuffle();
-
-      final size = progress.dailyGoal.clamp(1, _maxSessionSize);
-      final session = pool.take(math.min(size, pool.length)).toList();
-
+      final due = await loadDueSentences(ref: ref, userId: user.uid);
       setState(() {
         _queue
           ..clear()
-          ..addAll(session);
-        _sessionSize = session.length;
+          ..addAll(due);
+        _sessionSize = due.length;
         _loading = false;
-        if (session.isEmpty) {
-          _error = 'Bu seviyede cümle yok';
+        _empty = due.isEmpty;
+        if (due.isEmpty) {
+          // stay on empty state, not finished summary
         }
       });
     } catch (error) {
@@ -136,7 +130,6 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
       _missCounts[card.id] = misses;
       _didNotKnow += 1;
       _queue.removeAt(0);
-
       if (misses < _maxRequeuesPerCard) {
         final insertAt = math.min(2, _queue.length);
         _queue.insert(insertAt, card);
@@ -165,7 +158,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Flashcard'),
+        title: const Text('Tekrar'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -183,34 +176,69 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                       child: Text(_error!, textAlign: TextAlign.center),
                     ),
                   )
-                : _finished
-                    ? _SessionSummary(
-                        knew: _knew,
-                        didNotKnow: _didNotKnow,
-                        sessionSize: _sessionSize,
-                        onDone: () => Navigator.of(context).pop(),
-                      )
-                    : _SessionBody(
-                        current: _current!,
-                        isRetry: (_missCounts[_current!.id] ?? 0) > 0,
-                        flipped: _flipped,
-                        knew: _knew,
-                        sessionSize: _sessionSize,
-                        remaining: _queue.length,
-                        busy: _busy,
-                        onFlip: () => setState(() => _flipped = !_flipped),
-                        onKnew: _onKnew,
-                        onDidNotKnow: _onDidNotKnow,
-                      ),
+                : _empty
+                    ? const _EmptyDueState()
+                    : _finished
+                        ? _ReviewSummary(
+                            knew: _knew,
+                            didNotKnow: _didNotKnow,
+                            sessionSize: _sessionSize,
+                            onDone: () => Navigator.of(context).pop(),
+                          )
+                        : _ReviewBody(
+                            current: _current!,
+                            flipped: _flipped,
+                            knew: _knew,
+                            sessionSize: _sessionSize,
+                            remaining: _queue.length,
+                            busy: _busy,
+                            onFlip: () => setState(() => _flipped = !_flipped),
+                            onKnew: _onKnew,
+                            onDidNotKnow: _onDidNotKnow,
+                          ),
       ),
     );
   }
 }
 
-class _SessionBody extends StatelessWidget {
-  const _SessionBody({
+class _EmptyDueState extends StatelessWidget {
+  const _EmptyDueState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/brand/speak12_mascot.png',
+            height: 120,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 20),
+          Text('Bugün tekrar yok', style: AppTextStyles.headlineLarge),
+          const SizedBox(height: 8),
+          Text(
+            'Flashcard veya Quiz ile yeni cümle öğren; '
+            'zamanı gelenler burada listelenir.',
+            style: AppTextStyles.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 28),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Ana sayfaya dön'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewBody extends StatelessWidget {
+  const _ReviewBody({
     required this.current,
-    required this.isRetry,
     required this.flipped,
     required this.knew,
     required this.sessionSize,
@@ -222,7 +250,6 @@ class _SessionBody extends StatelessWidget {
   });
 
   final Sentence current;
-  final bool isRetry;
   final bool flipped;
   final int knew;
   final int sessionSize;
@@ -244,15 +271,9 @@ class _SessionBody extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                '$knew / $sessionSize',
-                style: AppTextStyles.labelLarge,
-              ),
+              Text('$knew / $sessionSize', style: AppTextStyles.labelLarge),
               const Spacer(),
-              Text(
-                'Kalan $remaining',
-                style: AppTextStyles.bodyMedium,
-              ),
+              Text('Kalan $remaining', style: AppTextStyles.bodyMedium),
             ],
           ),
           const SizedBox(height: 8),
@@ -267,13 +288,59 @@ class _SessionBody extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: _FlipCard(
-              key: ValueKey('${current.id}-$isRetry'),
-              flipped: flipped,
-              isRetry: isRetry,
-              english: current.englishText,
-              turkish: current.turkishText,
+            child: GestureDetector(
               onTap: onFlip,
+              child: AnimatedSwitcher(
+                duration: 320.ms,
+                child: Container(
+                  key: ValueKey('${current.id}-$flipped'),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (flipped
+                                  ? AppColors.primaryDark
+                                  : AppColors.warning)
+                              .withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          flipped ? 'Türkçe' : 'English',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: flipped
+                                ? AppColors.primaryDark
+                                : AppColors.warning,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Text(
+                        flipped ? current.turkishText : current.englishText,
+                        style: (flipped
+                                ? AppTextStyles.translationText
+                                : AppTextStyles.sentenceText)
+                            .copyWith(fontSize: 22),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -306,167 +373,8 @@ class _SessionBody extends StatelessWidget {
   }
 }
 
-class _FlipCard extends StatelessWidget {
-  const _FlipCard({
-    super.key,
-    required this.flipped,
-    required this.isRetry,
-    required this.english,
-    required this.turkish,
-    required this.onTap,
-  });
-
-  final bool flipped;
-  final bool isRetry;
-  final String english;
-  final String turkish;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedSwitcher(
-        duration: 320.ms,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          final rotate = Tween(begin: math.pi / 2, end: 0.0).animate(animation);
-          return AnimatedBuilder(
-            animation: rotate,
-            child: child,
-            builder: (context, child) {
-              return Transform(
-                alignment: Alignment.center,
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.001)
-                  ..rotateY(rotate.value),
-                child: child,
-              );
-            },
-          );
-        },
-        layoutBuilder: (currentChild, previousChildren) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              ...previousChildren,
-              ?currentChild,
-            ],
-          );
-        },
-        child: _CardFace(
-          key: ValueKey(flipped),
-          label: flipped ? 'Türkçe' : 'English',
-          text: flipped ? turkish : english,
-          textStyle: flipped
-              ? AppTextStyles.translationText
-              : AppTextStyles.sentenceText,
-          accent: flipped ? AppColors.primaryDark : AppColors.warning,
-          isRetry: isRetry,
-        ),
-      ),
-    );
-  }
-}
-
-class _CardFace extends StatelessWidget {
-  const _CardFace({
-    super.key,
-    required this.label,
-    required this.text,
-    required this.textStyle,
-    required this.accent,
-    required this.isRetry,
-  });
-
-  final String label;
-  final String text;
-  final TextStyle textStyle;
-  final Color accent;
-  final bool isRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isRetry
-              ? AppColors.warning.withValues(alpha: 0.45)
-              : AppColors.cardBorder,
-          width: isRetry ? 1.5 : 1,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    label,
-                    style: AppTextStyles.labelLarge.copyWith(color: accent),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  text,
-                  style: textStyle.copyWith(fontSize: 22),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          if (isRetry)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.replay_rounded,
-                      size: 16,
-                      color: AppColors.warning,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Tekrar',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SessionSummary extends StatelessWidget {
-  const _SessionSummary({
+class _ReviewSummary extends StatelessWidget {
+  const _ReviewSummary({
     required this.knew,
     required this.didNotKnow,
     required this.sessionSize,
@@ -495,24 +403,24 @@ class _SessionSummary extends StatelessWidget {
               .scale(
                 begin: const Offset(0.82, 0.82),
                 curve: Curves.easeOutBack,
-              )
-              .then(delay: 80.ms)
-              .shake(hz: 2.5, rotation: 0.03, duration: 420.ms),
+              ),
           const SizedBox(height: 16),
-          Text('Harika iş!', style: AppTextStyles.headlineLarge)
-              .animate()
-              .fadeIn(delay: 120.ms, duration: 280.ms),
+          Text('Tekrar bitti', style: AppTextStyles.headlineLarge),
           const SizedBox(height: 8),
           Text(
-            'Tilki seni tebrik ediyor — $sessionSize kartlık pratik tamam.',
+            '$sessionSize kartlık tekrar tamamlandı.',
             style: AppTextStyles.bodyMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
-          _SummaryRow(label: 'Bildim', value: '$knew', color: AppColors.primaryDark),
+          _SummaryRow(
+            label: 'Bildim',
+            value: '$knew',
+            color: AppColors.primaryDark,
+          ),
           const SizedBox(height: 10),
           _SummaryRow(
-            label: 'Bilemedim (deneme)',
+            label: 'Bilemedim',
             value: '$didNotKnow',
             color: AppColors.warning,
           ),

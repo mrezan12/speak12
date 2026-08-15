@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_providers.dart';
 import '../../providers/progress_providers.dart';
+import '../../providers/review_providers.dart';
 import '../../repositories/sentence_repository.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -207,6 +208,7 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed != true) return;
 
     await ref.read(userProgressRepositoryProvider).resetProgress(user.uid);
+    await ref.read(reviewRepositoryProvider).deleteAllReviews(user.uid);
     ref.invalidate(userProgressProvider);
 
     if (!context.mounted) return;
