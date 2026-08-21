@@ -14,6 +14,7 @@ import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/speak_button.dart';
+import '../learn/sentence_detail_screen.dart';
 
 /// In-session flashcard practice. Bilmedim re-queues; SRS schedules reviews.
 class FlashcardScreen extends ConsumerStatefulWidget {
@@ -182,8 +183,14 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
           if (!_loading &&
               _error == null &&
               !_finished &&
-              _current != null)
+              _current != null) ...[
+            IconButton(
+              tooltip: 'Cümle detayı',
+              icon: const Icon(Icons.info_outline_rounded),
+              onPressed: () => openSentenceDetail(context, _current!),
+            ),
             SpeakButton(text: _current!.englishText),
+          ],
         ],
       ),
       body: SafeArea(

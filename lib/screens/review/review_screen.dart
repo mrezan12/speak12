@@ -13,6 +13,7 @@ import '../../services/srs_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/speak_button.dart';
+import '../learn/sentence_detail_screen.dart';
 
 /// Due-queue review session (T17 SRS).
 class ReviewScreen extends ConsumerStatefulWidget {
@@ -176,8 +177,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               _error == null &&
               !_empty &&
               !_finished &&
-              _current != null)
+              _current != null) ...[
+            IconButton(
+              tooltip: 'Cümle detayı',
+              icon: const Icon(Icons.info_outline_rounded),
+              onPressed: () => openSentenceDetail(context, _current!),
+            ),
             SpeakButton(text: _current!.englishText),
+          ],
         ],
       ),
       body: SafeArea(
