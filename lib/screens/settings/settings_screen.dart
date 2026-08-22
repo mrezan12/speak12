@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_providers.dart';
+import '../../providers/notification_providers.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/review_providers.dart';
 import '../../repositories/sentence_repository.dart';
@@ -177,6 +178,89 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _setReminderEnabled(
+    BuildContext context,
+    WidgetRef ref,
+    bool enabled,
+  ) async {
+    final user = ref.read(authStateProvider).value;
+    if (user == null) return;
+
+    if (enabled) {
+      final granted =
+          await ref.read(notificationServiceProvider).requestPermission();
+      if (!granted) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Bildirim izni verilmedi. Telefon ayarlarından açabilirsin.',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+
+    await ref.read(userProgressRepositoryProvider).updateReminder(
+          userId: user.uid,
+          reminderEnabled: enabled,
+        );
+    ref.invalidate(userProgressProvider);
+  }
+
+  Future<void> _pickReminderTime(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(authStateProvider).value;
+    final progress = ref.read(userProgressProvider).value;
+    if (user == null || progress == null) return;
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: progress.reminderHour,
+        minute: progress.reminderMinute,
+      ),
+    );
+    if (picked == null) return;
+
+    await ref.read(userProgressRepositoryProvider).updateReminder(
+          userId: user.uid,
+          reminderHour: picked.hour,
+          reminderMinute: picked.minute,
+        );
+    ref.invalidate(userProgressProvider);
+  }
+
+  Future<void> _sendTestNotification(BuildContext context, WidgetRef ref) async {
+    final progress = ref.read(userProgressProvider).value;
+    final granted =
+        await ref.read(notificationServiceProvider).requestPermission();
+    if (!granted) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bildirim izni verilmedi. Telefon ayarlarından açabilirsin.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    await ref.read(notificationServiceProvider).showTest(
+          streak: progress?.currentStreak ?? 0,
+        );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Test bildirimi gönderildi'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
     final user = ref.read(authStateProvider).value;
     if (user == null) return;
@@ -300,7 +384,50 @@ class SettingsScreen extends ConsumerWidget {
               style: AppTextStyles.labelLarge,
             ),
           ),
-          const SizedBox(height: 12),
+          const Divider(height: 32),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Günlük hatırlatma'),
+            subtitle: const Text('Seçtiğin saatte pratik hatırlatması'),
+            value: progress?.reminderEnabled ?? true,
+            activeThumbColor: AppColors.primary,
+            onChanged: progress == null
+                ? null
+                : (enabled) => _setReminderEnabled(context, ref, enabled),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            enabled: progress?.reminderEnabled == true,
+            title: const Text('Hatırlatma saati'),
+            subtitle: const Text('Her gün bu saatte bildirim gelir'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  progress?.reminderTimeLabel ?? '20:00',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: progress?.reminderEnabled == true
+                        ? AppColors.primaryDark
+                        : AppColors.textHint,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textHint,
+                ),
+              ],
+            ),
+            onTap: progress?.reminderEnabled == true
+                ? () => _pickReminderTime(context, ref)
+                : null,
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Test bildirimi gönder'),
+            subtitle: const Text('İzin ve sesin çalıştığını hemen kontrol et'),
+            onTap: () => _sendTestNotification(context, ref),
+          ),
           const Divider(height: 32),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -319,12 +446,6 @@ class SettingsScreen extends ConsumerWidget {
               await ref.read(authRepositoryProvider).signOut();
             },
             child: const Text('Çıkış yap'),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Bildirim saati T19’da eklenecek.',
-            style: AppTextStyles.bodySmall,
-            textAlign: TextAlign.center,
           ),
         ],
       ),

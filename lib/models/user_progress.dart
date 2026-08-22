@@ -13,6 +13,9 @@ class UserProgress {
     this.onboardingCompleted = false,
     this.activityByDay = const {},
     this.learnedByLevel = const {},
+    this.reminderEnabled = true,
+    this.reminderHour = 20,
+    this.reminderMinute = 0,
   });
 
   final String userId;
@@ -30,6 +33,21 @@ class UserProgress {
 
   /// CEFR level → sentences learned while on that level.
   final Map<String, int> learnedByLevel;
+
+  /// Daily reminder switch (Ayarlar).
+  final bool reminderEnabled;
+
+  /// 0–23
+  final int reminderHour;
+
+  /// 0–59
+  final int reminderMinute;
+
+  String get reminderTimeLabel {
+    final h = reminderHour.toString().padLeft(2, '0');
+    final m = reminderMinute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 
   bool get isDailyGoalMet => todayLearned >= dailyGoal && dailyGoal > 0;
 
@@ -68,6 +86,9 @@ class UserProgress {
     bool? onboardingCompleted,
     Map<String, int>? activityByDay,
     Map<String, int>? learnedByLevel,
+    bool? reminderEnabled,
+    int? reminderHour,
+    int? reminderMinute,
     bool clearLastStudyDate = false,
   }) {
     return UserProgress(
@@ -83,6 +104,9 @@ class UserProgress {
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       activityByDay: activityByDay ?? this.activityByDay,
       learnedByLevel: learnedByLevel ?? this.learnedByLevel,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
     );
   }
 
@@ -101,6 +125,9 @@ class UserProgress {
       'onboardingCompleted': onboardingCompleted,
       'activityByDay': activityByDay,
       'learnedByLevel': learnedByLevel,
+      'reminderEnabled': reminderEnabled,
+      'reminderHour': reminderHour,
+      'reminderMinute': reminderMinute,
     };
   }
 
@@ -119,6 +146,9 @@ class UserProgress {
       onboardingCompleted: map['onboardingCompleted'] == true,
       activityByDay: _stringIntMap(map['activityByDay']),
       learnedByLevel: _stringIntMap(map['learnedByLevel']),
+      reminderEnabled: map['reminderEnabled'] as bool? ?? true,
+      reminderHour: (map['reminderHour'] as num?)?.toInt() ?? 20,
+      reminderMinute: (map['reminderMinute'] as num?)?.toInt() ?? 0,
     );
   }
 

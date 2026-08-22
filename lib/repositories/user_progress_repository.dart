@@ -88,6 +88,22 @@ class UserProgressRepository {
     return updated;
   }
 
+  Future<UserProgress> updateReminder({
+    required String userId,
+    bool? reminderEnabled,
+    int? reminderHour,
+    int? reminderMinute,
+  }) async {
+    final current = await getUserProgress(userId);
+    final updated = current.copyWith(
+      reminderEnabled: reminderEnabled,
+      reminderHour: reminderHour,
+      reminderMinute: reminderMinute,
+    );
+    await saveUserProgress(updated);
+    return updated;
+  }
+
   /// Clears learning counters; keeps level, daily goal, and onboarding.
   Future<UserProgress> resetProgress(String userId) async {
     final current = await getUserProgress(userId);

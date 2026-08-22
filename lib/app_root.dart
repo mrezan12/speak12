@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_providers.dart';
+import '../providers/notification_providers.dart';
 import '../providers/progress_providers.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/shell/main_shell.dart';
@@ -13,6 +14,13 @@ class AppRoot extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(userProgressProvider, (previous, next) {
+      next.whenData((progress) {
+        if (progress == null || !progress.onboardingCompleted) return;
+        ref.read(notificationServiceProvider).syncFromProgress(progress);
+      });
+    });
+
     final authAsync = ref.watch(authStateProvider);
 
     return authAsync.when(
